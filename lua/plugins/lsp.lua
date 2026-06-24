@@ -42,6 +42,29 @@ return {
       require("mason-lspconfig").setup({
         ensure_installed = { "lua_ls", "ts_ls", "pyright", "jdtls" },
       })
+
+      -- cria um gatilho que dispara toda vez que um servidor LSP se conecta a um arquivo
+      -- só nesse momento os atalhos abaixo passam a existir, e apenas naquele arquivo
+      vim.api.nvim_create_autocmd("LspAttach", {
+        callback = function(event)
+          -- função auxiliar pra não repetir as opções; buffer = event.buf deixa o atalho local ao arquivo
+          local function map(tecla, acao, descricao)
+            vim.keymap.set("n", tecla, acao, { buffer = event.buf, desc = "LSP: " .. descricao })
+          end
+
+          -- gd: pula pra onde a função/variável sob o cursor foi definida
+          map("gd", vim.lsp.buf.definition, "ir pra definicao")
+          -- K: mostra a documentação flutuante do item sob o cursor
+          map("K", vim.lsp.buf.hover, "ver documentacao")
+          -- <leader>rn: renomeia o símbolo sob o cursor em todos os lugares (leader = espaço)
+          map("<leader>rn", vim.lsp.buf.rename, "renomear")
+          -- <leader>ca: abre o menu de ações/correções de código naquele ponto
+          map("<leader>ca", vim.lsp.buf.code_action, "acoes de codigo")
+          -- ]d e [d: pulam pro próximo e pro erro anterior do arquivo
+          map("]d", function() vim.diagnostic.jump({ count = 1 }) end, "proximo erro")
+          map("[d", function() vim.diagnostic.jump({ count = -1 }) end, "erro anterior")
+        end,
+      })
     end,
   },
 }
